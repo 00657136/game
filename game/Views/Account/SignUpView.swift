@@ -1,0 +1,197 @@
+//
+//  SignUpView.swift
+//  game
+//
+//  Created by 張凱翔 on 2021/6/30.
+//
+
+import SwiftUI
+import FirebaseAuth
+
+
+
+struct SignUpView: View {
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var visible = false
+    @State private var revisible = false
+    @State private var showAlert = false
+    @State private var errorMsg = ""
+    @State private var activeAlert: ActiveAlert = .confirmPasswordError
+    @State private var TurnToCreatRoleView = false
+    
+    var body: some View {
+        VStack{
+            //標題........
+            Text("註冊")
+                .font(.system(size: 30, weight: .bold))
+                .foregroundColor(Color("dark"))
+                .kerning(10)
+                .frame(maxWidth: .infinity,alignment: .leading)
+            
+            //信箱..........
+            VStack(alignment: .leading, spacing: 5){
+                
+                Text("信箱")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.gray)
+                
+                TextField("請在此填入信箱",text: $email)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color("dark"))
+                    .padding(.top,5)
+                
+                Divider()
+            }
+            .padding(.top,25)
+            
+            //密碼.........
+            VStack(alignment: .leading, spacing: 5){
+                
+                Text("密碼")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.gray)
+                
+                HStack{
+                    
+                    if visible {
+                        TextField("請在此填入密碼",text: $password)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color("dark"))
+                            .padding(.top,5)
+                    }
+                    else{
+                        SecureField("請在此填入密碼",text: $password)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color("dark"))
+                            .padding(.top,5)
+                    }
+                    
+                    
+                    Button(action: {
+                        
+                        self.visible.toggle()
+                        
+                    }){
+                        
+                        Image(systemName: self.visible ? "eye.slash.fill" : "eye.fill")
+                            .foregroundColor(Color("dark").opacity(0.7))
+                        
+                    }
+                    
+                }
+                
+                Divider()
+            }
+            .padding(.top,25)
+            
+            //確認密碼.........
+            VStack(alignment: .leading, spacing: 5){
+                
+                Text("確認密碼")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.gray)
+                
+                HStack{
+                    
+                    if revisible {
+                        TextField("再輸入一次密碼",text: $confirmPassword)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color("dark"))
+                            .padding(.top,5)
+                    }
+                    else{
+                        SecureField("再輸入一次密碼",text: $confirmPassword)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(Color("dark"))
+                            .padding(.top,5)
+                    }
+                    
+                    
+                    Button(action: {
+                        
+                        self.revisible.toggle()
+                        
+                    }){
+                        
+                        Image(systemName: self.revisible ? "eye.slash.fill" : "eye.fill")
+                            .foregroundColor(Color("dark").opacity(0.7))
+                        
+                    }
+                    
+                }
+                
+                Divider()
+            }
+            .padding(.top,25)
+            
+            
+            
+            //下一頁......
+            Button(action: {
+                
+                if password == confirmPassword{
+                
+                    Auth.auth().createUser(withEmail: email, password: password) { result, error in
+                                
+                         guard let user = result?.user,
+                               error == nil else {
+                             print(error?.localizedDescription)
+                                   errorMsg = error?.localizedDescription ?? "此信箱已被註冊"
+                                   self.activeAlert = .authError
+                                   showAlert = true
+                                   
+                             return
+                         }
+                         print(user.email, user.uid)
+                    }
+                    TurnToCreatRoleView = true
+                }
+                
+                else {
+                    self.activeAlert = .confirmPasswordError
+                    showAlert = true
+                    
+                }
+                
+            }, label: {
+                HStack(alignment: .center, spacing: 5){
+                    Spacer()
+                    
+                    Text("註冊")
+                        .font(.system(size: 18))
+                        .foregroundColor(Color.white)
+                    
+                    Spacer()
+                    
+                }
+                .padding()
+                .background(Color("dark"))
+                .cornerRadius(30)
+                
+            })
+            .frame(maxWidth: .infinity,alignment: .leading)
+            .padding(.top,10)
+            .alert(isPresented: $showAlert){
+                switch activeAlert {
+                case .confirmPasswordError:
+                    return Alert(title: Text("密碼與確認密碼不一致"))
+                case .authError:
+                    return Alert(title: Text(errorMsg))
+                }
+               
+            }
+            .fullScreenCover(isPresented: $TurnToCreatRoleView, content: {CreatRoleView(email: email)})
+        }
+        
+    }
+}
+
+struct SignUpView_Previews: PreviewProvider {
+    static var previews: some View {
+        SignUpView()
+    }
+}
+
+
